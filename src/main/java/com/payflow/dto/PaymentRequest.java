@@ -7,13 +7,22 @@ import jakarta.validation.constraints.Pattern;
 
 import java.math.BigDecimal;
 
+
+//used for validation of the incoming request
+
 public class PaymentRequest {
 
     @NotBlank
-    String customerId;
+    public String customerId;
+
     @NotNull
     @DecimalMin(value = "0.01")
-    BigDecimal amount;
+    public BigDecimal amount;
 
-    @NotBlank
+    @NotNull
+    @Pattern(regexp = "INR|USA|EUR")
+    public String currency;
+
 }
+
+

@@ -2,6 +2,8 @@ package com.payflow.entities;
 
 import com.payflow.enums.PaymentStatus;
 import jakarta.persistence.*;
+import lombok.Data;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
         )
     }
 )
+@Data
 public class Payment{
 
     @Id
@@ -40,6 +43,9 @@ public class Payment{
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    @Column(name = "idempotency_key", nullable = false, unique = true)
+    private String idempotencyKey;
 
     @PrePersist
     public void onCreate(){
