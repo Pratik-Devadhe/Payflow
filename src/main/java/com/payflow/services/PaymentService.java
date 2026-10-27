@@ -22,8 +22,6 @@ public class PaymentService {
             p.setCurrency(payment.currency);
             p.setAmount(payment.amount);
 
-
-
         return paymentRepository.save(p);
     }
 
