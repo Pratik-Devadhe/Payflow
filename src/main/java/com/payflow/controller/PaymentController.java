@@ -7,6 +7,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
@@ -26,8 +28,17 @@ public class PaymentController {
         return paymentService.createPayment(payment, key);
     }
 
+    @GetMapping
+    public List<Payment> getAllPayments() {
+        return paymentService.getAllPayments();
+    }
+
     @GetMapping("/{id}")
     public Payment getPayment(@PathVariable String id) {
         return paymentService.getPayment(id);
     }
+
+
+
+
 }

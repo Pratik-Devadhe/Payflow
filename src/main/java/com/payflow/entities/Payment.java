@@ -2,10 +2,12 @@ package com.payflow.entities;
 
 import com.payflow.enums.PaymentStatus;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
 
 
 @Entity
@@ -23,6 +25,7 @@ public class Payment{
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id")
     private String id;
 
     @Column(nullable = false)
@@ -36,6 +39,7 @@ public class Payment{
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+
     private PaymentStatus status;
 
     public String provider;

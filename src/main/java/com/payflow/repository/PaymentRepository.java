@@ -2,6 +2,9 @@ package com.payflow.repository;
 
 import com.payflow.entities.Payment;
 import java.util.Optional;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
