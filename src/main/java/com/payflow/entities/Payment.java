@@ -2,68 +2,61 @@ package com.payflow.entities;
 
 import com.payflow.enums.PaymentStatus;
 import jakarta.persistence.*;
-import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
-
+import java.util.UUID;
 
 @Entity
-@Table(
-    name = "payments",
-    uniqueConstraints = {
-        @UniqueConstraint(
-            name = "uk_payment_idempotency_key",
-            columnNames = "idempotency_key"
-        )
-    }
-)
+@Table(name = "payments")
 @Data
-public class Payment{
+public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id")
-    private String id;
+    @Column(name = "id", updatable = false, nullable = false)
+    private UUID id;
 
-    @Column(nullable = false)
-    private String customerId;
-    
-    @Column(nullable = false , precision = 12 , scale = 2)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sender_account_id", nullable = false)
+    private Account senderAccount;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "receiver_account_id", nullable = false)
+    private Account receiverAccount;
+
+    @Column(name = "amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
-    @Column(nullable = false, length = 3)
+    @Column(name = "currency", nullable = false, length = 3)
     private String currency;
-    
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
     private PaymentStatus status;
 
-    public String provider;
+    @Column(name = "provider", nullable = false, length = 50)
+    private String provider = "INTERNAL";
 
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @Column(name = "idempotency_key", nullable = false, unique = true)
-    private String idempotencyKey;
-
     @PrePersist
-    public void onCreate(){
+    public void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = createdAt;
+
+        if (status == null) {
+            status = PaymentStatus.PENDING;
+        }
     }
 
     @PreUpdate
-    public void onUpdate(){
+    public void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
-    public Payment(){
-
-    }
-    
 }

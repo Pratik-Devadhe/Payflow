@@ -19,24 +19,23 @@ public class PaymentController {
         this.paymentService = paymentService;
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Payment createPayment(
-            @Valid @RequestBody PaymentRequest payment,
-            @RequestHeader("Idempotency-Key") String key) {
-
-        return paymentService.createPayment(payment, key);
-    }
-
-    @GetMapping
-    public List<Payment> getAllPayments() {
-        return paymentService.getAllPayments();
-    }
-
-    @GetMapping("/{id}")
-    public Payment getPayment(@PathVariable String id) {
-        return paymentService.getPayment(id);
-    }
+//    @PostMapping
+//    @ResponseStatus(HttpStatus.CREATED)
+//    public Payment createPayment(
+//            @Valid @RequestBody PaymentRequest payment) {
+//
+//        return paymentService.createPayment(payment);
+//    }
+//
+//    @GetMapping
+//    public List<Payment> getAllPayments() {
+//        return paymentService.getAllPayments();
+//    }
+//
+//    @GetMapping("/{id}")
+//    public Payment getPayment(@PathVariable String id) {
+//        return paymentService.getPayment(id);
+//    }
 
 
 
