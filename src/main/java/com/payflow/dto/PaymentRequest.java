@@ -13,11 +13,11 @@ import java.util.UUID;
 
 public class PaymentRequest {
 
-    @NotBlank
+    @NotNull
     public UUID senderId;
 
-    @NotBlank
-    public UUID reciverId;
+    @NotNull
+    public UUID receiverId;
 
 
     @NotNull

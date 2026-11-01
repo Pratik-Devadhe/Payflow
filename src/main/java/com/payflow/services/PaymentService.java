@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,38 +38,100 @@ public class PaymentService {
 
 
     @Transactional
-    public PaymentResponse createPayment(PaymentRequest payment){
+    public PaymentResponse createPayment(PaymentRequest request) {
 
-//              Sender is Not Valid;
-        if(!userRepository.existsById(payment.senderId)){
+        // 1. Validate amount
+        if (request.amount == null ||
+                request.amount.compareTo(BigDecimal.ZERO) <= 0) {
+
             throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Sender is not a valid user"
+                    HttpStatus.BAD_REQUEST,
+                    "Payment amount must be greater than zero"
             );
         }
 
-//        Receiver is not valid user
+        // 2. Validate sender
+        User sender = userRepository.findById(request.senderId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Sender is not a valid user"
+                ));
 
-        if(!userRepository.existsById(payment.reciverId)){
+        // 3. Validate receiver
+        User receiver = userRepository.findById(request.receiverId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Receiver is not a valid user"
+                ));
+
+        // 4. Prevent self-payment
+        if (sender.getId().equals(receiver.getId())) {
             throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Receiver is not a valid user"
+                    HttpStatus.BAD_REQUEST,
+                    "Sender and receiver cannot be the same"
             );
         }
 
-        User sender = userRepository.getById(payment.senderId);
-        User receiver = userRepository.getById(payment.reciverId);
+        // 5. Fetch accounts with database locks
+        Account senderAccount =
+                accountRepository.findByUserIdForUpdate(sender)
+                        .orElseThrow(() -> new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Sender account not found"
+                        ));
 
-        AccountResponse senderAcc = accountRepository.findByUserId(sender);
-        AccountResponse receiverAcc = accountRepository.findByUserId(receiver);
+        Account receiverAccount =
+                accountRepository.findByUserIdForUpdate(receiver)
+                        .orElseThrow(() -> new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Receiver account not found"
+                        ));
 
-//        Not a Sufficient amount
+        // 6. Check sufficient balance
+        if (senderAccount.getBalance()
+                .compareTo(request.amount) < 0) {
 
-        if(senderAcc.balance() < payment.amount){
-
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Insufficient account balance"
+            );
         }
 
-          return null;
+        // 7. Debit sender
+        senderAccount.setBalance(
+                senderAccount.getBalance().subtract(request.amount)
+        );
+
+        // 8. Credit receiver
+        receiverAccount.setBalance(
+                receiverAccount.getBalance().add(request.amount)
+        );
+
+        // 9. Save updated accounts
+        accountRepository.save(senderAccount);
+        accountRepository.save(receiverAccount);
+
+        // 10. Create payment record
+        Payment newPayment = new Payment();
+
+            // Set payment fields according to your entity
+            newPayment.setSenderAccount(senderAccount);
+            newPayment.setReceiverAccount(receiverAccount);
+            newPayment.setAmount(request.amount);
+            newPayment.setCurrency(request.currency);
+            newPayment.setStatus(PaymentStatus.SUCCESS);
+
+        Payment savedPayment = paymentRepository.save(newPayment);
+
+        return new PaymentResponse(
+                savedPayment.getId(),
+                savedPayment.getSenderAccount().getId(),
+                savedPayment.getReceiverAccount().getId(),
+                savedPayment.getAmount(),
+                savedPayment.getCurrency(),
+                savedPayment.getStatus(),
+                savedPayment.getProvider()
+        );
     }
 
 
@@ -99,8 +162,8 @@ public class PaymentService {
     private PaymentResponse convertToResponse(Payment payment){
         return new PaymentResponse(
                 payment.getId(),
-                payment.getSenderAccount(),
-                payment.getReceiverAccount(),
+                payment.getSenderAccount().getId(),
+                payment.getReceiverAccount().getId(),
                 payment.getAmount(),
                 payment.getCurrency(),
                 payment.getStatus(),

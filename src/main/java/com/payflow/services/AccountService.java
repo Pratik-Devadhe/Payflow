@@ -38,6 +38,13 @@ public class AccountService {
         User user = userRepository.findById(request.userId())
                 .orElseThrow( () -> new RuntimeException("User Not Found"));
 
+        if (accountRepository.existsByUser(user)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "User already has an account"
+            );
+        }
+
         Account acc = new Account();
 
         acc.setAccountNumber(request.accountNumber());
