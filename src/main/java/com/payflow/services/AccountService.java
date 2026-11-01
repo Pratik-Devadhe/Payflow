@@ -3,7 +3,9 @@ package com.payflow.services;
 import com.payflow.dto.AccountRequest;
 import com.payflow.dto.AccountResponse;
 import com.payflow.entities.Account;
+import com.payflow.entities.User;
 import com.payflow.repository.AccountRepository;
+import com.payflow.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,9 +18,11 @@ import java.util.List;
 public class AccountService {
 
     private AccountRepository accountRepository;
+    private UserRepository userRepository;
 
-    AccountService(AccountRepository accountRepository){
+    AccountService(AccountRepository accountRepository, UserRepository userRepository){
         this.accountRepository = accountRepository;
+        this.userRepository = userRepository;
     }
 
     @Transactional
@@ -31,11 +35,14 @@ public class AccountService {
             );
         }
 
+        User user = userRepository.findById(request.userId())
+                .orElseThrow( () -> new RuntimeException("User Not Found"));
+
         Account acc = new Account();
 
         acc.setAccountNumber(request.accountNumber());
         acc.setBalance(request.balance());;
-        acc.setId(request.userId());
+        acc.setUser(user);
 
         Account savedAccount = accountRepository.save(acc);
 

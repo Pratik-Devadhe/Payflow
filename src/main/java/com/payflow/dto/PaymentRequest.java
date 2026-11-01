@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 
 //used for validation of the incoming request
@@ -13,10 +14,14 @@ import java.math.BigDecimal;
 public class PaymentRequest {
 
     @NotBlank
-    public String customerId;
+    public UUID senderId;
+
+    @NotBlank
+    public UUID reciverId;
+
 
     @NotNull
-    @DecimalMin(value = "0.01")
+    @DecimalMin(value = "0.02")
     public BigDecimal amount;
 
     @NotNull
