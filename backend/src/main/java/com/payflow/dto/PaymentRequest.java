@@ -19,6 +19,8 @@ public class PaymentRequest {
     @NotNull
     public UUID receiverId;
 
+    @NotBlank
+    public String idempotency_key;
 
     @NotNull
     @DecimalMin(value = "0.02")

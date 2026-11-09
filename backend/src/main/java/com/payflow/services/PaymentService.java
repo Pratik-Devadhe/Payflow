@@ -36,6 +36,8 @@ public class PaymentService {
 
 //    1. create payment;
 
+//    dive into 2 parts i: payment creation  ii: transaction completion;
+
 
     @Transactional
     public PaymentResponse createPayment(PaymentRequest request) {
@@ -87,39 +89,39 @@ public class PaymentService {
                                 "Receiver account not found"
                         ));
 
-        // 6. Check sufficient balance
-        if (senderAccount.getBalance()
-                .compareTo(request.amount) < 0) {
+//        // 6. Check sufficient balance
+//        if (senderAccount.getBalance()
+//                .compareTo(request.amount) < 0) {
+//
+//            throw new ResponseStatusException(
+//                    HttpStatus.BAD_REQUEST,
+//                    "Insufficient account balance"
+//            );
+//        }
 
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Insufficient account balance"
-            );
-        }
-
-        // 7. Debit sender
-        senderAccount.setBalance(
-                senderAccount.getBalance().subtract(request.amount)
-        );
-
-        // 8. Credit receiver
-        receiverAccount.setBalance(
-                receiverAccount.getBalance().add(request.amount)
-        );
-
-        // 9. Save updated accounts
-        accountRepository.save(senderAccount);
-        accountRepository.save(receiverAccount);
-
+//        // 7. Debit sender
+//        senderAccount.setBalance(
+//                senderAccount.getBalance().subtract(request.amount)
+//        );
+//
+//        // 8. Credit receiver
+//        receiverAccount.setBalance(
+//                receiverAccount.getBalance().add(request.amount)
+//        );
+//
+//        // 9. Save updated accounts
+//        accountRepository.save(senderAccount);
+//        accountRepository.save(receiverAccount);
+//
         // 10. Create payment record
         Payment newPayment = new Payment();
 
-            // Set payment fields according to your entity
             newPayment.setSenderAccount(senderAccount);
             newPayment.setReceiverAccount(receiverAccount);
             newPayment.setAmount(request.amount);
             newPayment.setCurrency(request.currency);
-            newPayment.setStatus(PaymentStatus.SUCCESS);
+            newPayment.setIdempotency_key(request.idempotency_key);
+            newPayment.setStatus(PaymentStatus.PENDING);
 
         Payment savedPayment = paymentRepository.save(newPayment);
 
@@ -132,7 +134,12 @@ public class PaymentService {
                 savedPayment.getStatus(),
                 savedPayment.getProvider()
         );
+
+
     }
+
+
+
 
 
 //    2. get all payments

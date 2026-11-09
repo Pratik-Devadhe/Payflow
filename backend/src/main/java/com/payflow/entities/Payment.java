@@ -39,6 +39,10 @@ public class Payment {
     @Column(name = "provider", nullable = false, length = 50)
     private String provider = "INTERNAL";
 
+    @Column(name = "idempotency_key", nullable = false)
+    private String idempotency_key;
+
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

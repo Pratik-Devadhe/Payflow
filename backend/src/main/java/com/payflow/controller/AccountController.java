@@ -29,7 +29,7 @@ public class AccountController {
         return new ResponseEntity<>(response , HttpStatus.CREATED);
     }
 
-    @GetMapping("/{number}")
+    @GetMapping("/{accountNumber}")
     public ResponseEntity<AccountResponse> getByAccountNumber(@PathVariable String accountNumber){
         return ResponseEntity.ok(accountservice.getByAccountNumber(accountNumber));
     }

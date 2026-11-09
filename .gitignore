@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Payflow Monorepo ###
+backend/target/
+frontend/node_modules/
+frontend/dist/
+*.log
+.DS_Store
