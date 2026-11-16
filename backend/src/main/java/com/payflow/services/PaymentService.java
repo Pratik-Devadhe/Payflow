@@ -11,12 +11,14 @@ import com.payflow.repository.AccountRepository;
 import com.payflow.repository.PaymentRepository;
 import com.payflow.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toList;
@@ -40,7 +42,39 @@ public class PaymentService {
 
 
     @Transactional
-    public PaymentResponse createPayment(PaymentRequest request) {
+    public PaymentResponse createPayment(PaymentRequest request, String idempotencyKey) {
+
+        Optional<Payment> existingPayment =
+                paymentRepository.findByIdempotencyKey(idempotencyKey);
+
+        if (existingPayment.isPresent()) {
+            Payment existing = existingPayment.get();
+
+            // Semantic check: verify all request parameters match the original payment
+            boolean senderMatches = existing.getSenderAccount() != null
+                    && existing.getSenderAccount().getUser() != null
+                    && existing.getSenderAccount().getUser().getId().equals(request.senderId);
+
+            boolean receiverMatches = existing.getReceiverAccount() != null
+                    && existing.getReceiverAccount().getUser() != null
+                    && existing.getReceiverAccount().getUser().getId().equals(request.receiverId);
+
+            boolean amountMatches = existing.getAmount() != null
+                    && request.amount != null
+                    && existing.getAmount().compareTo(request.amount) == 0;
+
+            boolean currencyMatches = existing.getCurrency() != null
+                    && existing.getCurrency().equalsIgnoreCase(request.currency);
+
+            if (!senderMatches || !receiverMatches || !amountMatches || !currencyMatches) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Idempotency key has already been used with different payment parameters"
+                );
+            }
+
+            return convertToResponse(existing);
+        }
 
         // 1. Validate amount
         if (request.amount == null ||
@@ -74,56 +108,41 @@ public class PaymentService {
             );
         }
 
-        // 5. Fetch accounts with database locks
+        // 5. Fetch accounts
         Account senderAccount =
-                accountRepository.findByUserIdForUpdate(sender)
+                accountRepository.findByUser(sender)
                         .orElseThrow(() -> new ResponseStatusException(
                                 HttpStatus.NOT_FOUND,
                                 "Sender account not found"
                         ));
 
         Account receiverAccount =
-                accountRepository.findByUserIdForUpdate(receiver)
+                accountRepository.findByUser(receiver)
                         .orElseThrow(() -> new ResponseStatusException(
                                 HttpStatus.NOT_FOUND,
                                 "Receiver account not found"
                         ));
 
-//        // 6. Check sufficient balance
-//        if (senderAccount.getBalance()
-//                .compareTo(request.amount) < 0) {
-//
-//            throw new ResponseStatusException(
-//                    HttpStatus.BAD_REQUEST,
-//                    "Insufficient account balance"
-//            );
-//        }
-
-//        // 7. Debit sender
-//        senderAccount.setBalance(
-//                senderAccount.getBalance().subtract(request.amount)
-//        );
-//
-//        // 8. Credit receiver
-//        receiverAccount.setBalance(
-//                receiverAccount.getBalance().add(request.amount)
-//        );
-//
-//        // 9. Save updated accounts
-//        accountRepository.save(senderAccount);
-//        accountRepository.save(receiverAccount);
-//
-        // 10. Create payment record
+        // 6. Create payment record
         Payment newPayment = new Payment();
 
-            newPayment.setSenderAccount(senderAccount);
-            newPayment.setReceiverAccount(receiverAccount);
-            newPayment.setAmount(request.amount);
-            newPayment.setCurrency(request.currency);
-            newPayment.setIdempotency_key(request.idempotency_key);
-            newPayment.setStatus(PaymentStatus.PENDING);
+        newPayment.setSenderAccount(senderAccount);
+        newPayment.setReceiverAccount(receiverAccount);
+        newPayment.setAmount(request.amount);
+        newPayment.setCurrency(request.currency);
+        newPayment.setIdempotencyKey(idempotencyKey);
+        newPayment.setStatus(PaymentStatus.PENDING);
 
-        Payment savedPayment = paymentRepository.save(newPayment);
+        Payment savedPayment;
+        try {
+            savedPayment = paymentRepository.saveAndFlush(newPayment);
+        } catch (DataIntegrityViolationException e) {
+            // Concurrent race condition: another transaction committed with this idempotency key
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "A payment request with this idempotency key is already in progress or has been processed"
+            );
+        }
 
         return new PaymentResponse(
                 savedPayment.getId(),
@@ -134,8 +153,6 @@ public class PaymentService {
                 savedPayment.getStatus(),
                 savedPayment.getProvider()
         );
-
-
     }
 
 

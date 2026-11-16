@@ -39,8 +39,16 @@ public class Payment {
     @Column(name = "provider", nullable = false, length = 50)
     private String provider = "INTERNAL";
 
-    @Column(name = "idempotency_key", nullable = false)
-    private String idempotency_key;
+    @Column(name = "idempotency_key", nullable = false, unique = true, length = 100)
+    private String idempotencyKey;
+
+    public String getIdempotency_key() {
+        return this.idempotencyKey;
+    }
+
+    public void setIdempotency_key(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
+    }
 
 
     @Column(name = "created_at", nullable = false, updatable = false)

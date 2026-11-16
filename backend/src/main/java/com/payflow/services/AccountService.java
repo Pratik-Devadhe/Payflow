@@ -75,6 +75,7 @@ public class AccountService {
     private AccountResponse convertToResponse(Account account){
         return new AccountResponse(
                 account.getId(),
+                account.getUser() != null ? account.getUser().getId() : null,
                 account.getAccountNumber(),
                 account.getBalance(),
                 account.getCurrency(),

@@ -24,9 +24,15 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     AccountResponse findByUserId(User user);
 
+    Optional<Account> findByUser(User user);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM Account a WHERE a.user = :user")
     Optional<Account> findByUserIdForUpdate(@Param("user") User user);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT a FROM Account a WHERE a.id = :id")
+    Optional<Account> findByIdForUpdate(@Param("id") UUID id);
 }
 
 //Why use PESSIMISTIC_WRITE?

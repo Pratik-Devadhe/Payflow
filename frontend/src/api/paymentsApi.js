@@ -13,12 +13,18 @@ export const paymentsApi = {
 
   // POST /api/payments
   createPayment: async ({ senderId, receiverId, idempotency_key, amount, currency }) => {
-    return await apiClient.post('/payments', {
-      senderId,
-      receiverId,
-      idempotency_key,
-      amount: parseFloat(amount),
-      currency: currency || 'INR',
-    });
+    return await apiClient.post(
+      '/payments',
+      {
+        senderId,
+        receiverId,
+        idempotency_key,
+        amount: parseFloat(amount),
+        currency: currency || 'INR',
+      },
+      {
+        headers: idempotency_key ? { 'Idempotency-Key': idempotency_key } : {},
+      }
+    );
   },
 };

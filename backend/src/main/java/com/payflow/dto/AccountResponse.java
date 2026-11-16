@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public record AccountResponse(
         UUID id,
+        UUID userId,
         String accountNumber,
         BigDecimal balance,
         String currency,

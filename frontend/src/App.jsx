@@ -267,6 +267,7 @@ export default function App() {
         accounts={accounts}
         preselectedSender={preselectedSender}
         onPaymentCreated={() => loadAllData(true)}
+        onOpenCreateAccount={handleOpenCreateAccount}
         showToast={showToast}
       />
 

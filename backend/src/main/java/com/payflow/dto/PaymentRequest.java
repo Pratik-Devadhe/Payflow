@@ -19,8 +19,19 @@ public class PaymentRequest {
     @NotNull
     public UUID receiverId;
 
-    @NotBlank
+    // Optional in body if supplied via 'Idempotency-Key' HTTP header
     public String idempotency_key;
+    public String idempotencyKey;
+
+    public String getIdempotencyKey() {
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            return idempotencyKey.trim();
+        }
+        if (idempotency_key != null && !idempotency_key.isBlank()) {
+            return idempotency_key.trim();
+        }
+        return null;
+    }
 
     @NotNull
     @DecimalMin(value = "0.02")
